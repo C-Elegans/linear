@@ -1,5 +1,6 @@
 module Main where
 import Core
+import Core.Renamer
 import Pretty
 import Type
 
@@ -9,5 +10,6 @@ testExpr  = Lam (iVar "a") $ Lam (iVar "b") $ Lam (iVar "c") innerExpr
 
 main :: IO ()
 main = do
-    let txt = pp testExpr
-    putStrLn txt
+    putStrLn $ pp true testExpr
+    putStrLn $ pp False $ rename testExpr
+

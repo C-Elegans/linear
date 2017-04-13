@@ -9,32 +9,34 @@ parensIf True = parens
 parensIf False = id
 
 class Pretty p where
-    ppr :: Int -> p -> Doc
+    ppr :: Int -> Bool -> p -> Doc
 
 instance Pretty Var where
-    ppr _ x = text (varName x) <> text "::" <> ppr 0 (varType x)
+    ppr _ True x = text (varName x) <> text "::" <> ppr 0 True (varType x)
+    ppr _ False x = text (varName x)
 
 instance Pretty (Expr Var) where
-    ppr p (Var a) = ppr p a
-    ppr p (App a b) = parensIf (p>0) $ ppr (p+1) a <+> ppr p b
-    ppr p (Lam a b) = text "\\" <> ppr p a <+> text "->" <+> ppr p b
-    ppr p (Let a b) = text "let " <> ppr p a <+> text "in" <+> ppr p b
-    ppr p (Type t) = ppr p t
-    ppr p (Op o e1 e2) = parensIf (p>0) $ ppr p e1 <+> ppr p o <+> ppr p e2
-    ppr p (Lit l) = ppr p l
+    ppr p tp (Var a) = ppr p tp a
+    ppr p tp (App a b) = parensIf (p>0) $ ppr (p+1) tp a <+> ppr p tp b
+    ppr p tp (Lam a b) = text "\\" <> ppr p tp a <+> text "->" <+> ppr p tp b
+    ppr p tp (Let a b) = text "let " <> ppr p tp a <+> text "in" <+> ppr p tp b
+    ppr p tp (Type t) = ppr p tp t
+    ppr p tp (Op o e1 e2) = parensIf (p>0) $ ppr p tp e1 <+> ppr p tp o <+> ppr p tp e2
+    ppr p tp (Lit l) = ppr p tp l
 
 instance Pretty Literal where
-    ppr _ (Int i) = int i
+    ppr _ _ (Int i) = int i
 instance Pretty Binop where
-    ppr _ Add = text "+"
-    ppr _ Sub = text "-"
-    ppr _ Mul = text "*"
+    ppr _ _ Add = text "+"
+    ppr _ _ Sub = text "-"
+    ppr _ _ Mul = text "*"
 instance Pretty Type where
-    ppr p (TVar (TV t)) = text t
-    ppr p (TCon c) = text c
-    ppr p (TArr t1 t2) = ppr p t1 <+> text " -> " <+> ppr p t2
-    ppr p (TLArr t1 t2) = ppr p t1 <+> text " ⊸ " <+> ppr p t2
+    ppr p True (TVar (TV t)) = text t
+    ppr p True (TCon c) = text c
+    ppr p True (TArr t1 t2) = ppr p True t1 <+> text " -> " <+> ppr p True t2
+    ppr p True (TLArr t1 t2) = ppr p True t1 <+> text " ⊸ " <+> ppr p True t2
+    ppr _ False _ = text "" 
 instance Pretty (Bind Var) where
-    ppr p (NonRec b e) = ppr p b <+> text "=" <+> ppr p e
-pp :: Pretty p => p -> String
-pp = render . ppr 0
+    ppr p tp (NonRec b e) = ppr p tp b <+> text "=" <+> ppr p tp e
+pp :: Pretty p => Bool -> p -> String
+pp tp p= render $ ppr 0 tp p 
