@@ -5,6 +5,11 @@ import Core
 import Pretty
 import Debug.Trace (trace)
 import Control.Monad.State
+{-
+ - The renamer module resolves any name shadowing in its inputs by renaming all 
+ - variables with unique names
+-}
+
 type RenameMonad = State Int
 
 instance FreshMonad RenameMonad where

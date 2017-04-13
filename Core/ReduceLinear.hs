@@ -14,8 +14,6 @@ strengthreduce (Let (NonRec v@TyVar{} b) e)
     | countOccurences v e == 1 = 
         let newVar = v {varWeight = One}
         in Let (NonRec newVar b) (descend (replaceAllVars v (Var newVar)) e)
-strengthreduce (Let (NonRec v@TyVar{} _) e)
-    | countOccurences v e == 0 = e
 strengthreduce e = e
 
 countOccurences :: Var -> Expr Var -> Int

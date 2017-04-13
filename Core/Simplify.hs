@@ -1,5 +1,7 @@
 {-# Language TypeSynonymInstances, FlexibleInstances #-}
-module Core.Simplify where
+module Core.Simplify(
+    runSimplify
+    ) where
 import Core
 import Pretty (pp)
 import Debug.Trace (trace)
@@ -47,22 +49,21 @@ exprSimplify (Op op e1 e2) = do
         opFromOp Mul = (*)
 exprSimplify x = return x
 
+--removes unused variables 
 removeUnused :: Expr Var -> SimplifyMonad (Expr Var)
-removeUnused (Lam v@TyVar{} e) =
-    if varUnused v e then
-        return (Lam Hole e)
-    else
-        return (Lam v e)
-    where 
-        varUnused v (Var v2) = v/=v2
-        varUnused v (Lit _) = True
-        varUnused v (App e b) = varUnused v e && varUnused v b
-        varUnused v (Lam _ e) = varUnused v e
-        varUnused v (Let (NonRec _ b) e) = varUnused v b && varUnused v e
-        varUnused v (Op _ e1 e2) = varUnused v e1 && varUnused v e2
-        varUnused v _ = False
+removeUnused (Lam v@TyVar{} e) 
+    | varUnused v e = return (Lam Hole e)
+removeUnused (Let (NonRec v@TyVar{} b) e)
+    | varUnused v e = return e
 removeUnused l = return l
 
+varUnused v (Var v2) = v/=v2
+varUnused v (Lit _) = True
+varUnused v (App e b) = varUnused v e && varUnused v b
+varUnused v (Lam _ e) = varUnused v e
+varUnused v (Let (NonRec _ b) e) = varUnused v b && varUnused v e
+varUnused v (Op _ e1 e2) = varUnused v e1 && varUnused v e2
+varUnused v _ = False
 type SimplifyMonad = State Int
 
 instance FreshMonad SimplifyMonad where
