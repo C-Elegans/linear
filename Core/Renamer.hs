@@ -13,16 +13,22 @@ instance FreshMonad RenameMonad where
         put $ u+1
         return u
 
-rename :: Expr Var -> Expr Var
-rename x = evalState (descendM renameM x) 0
+rename :: [Function] -> [Function]
+rename = map rn 
+    where
+    rn :: Function -> Function
+    rn f = 
+        let b = fBody f
+            b' = evalState (descendM renameM b) 0
+        in f {fBody = b'}
 
 renameM :: Expr Var -> RenameMonad (Expr Var)
-renameM (Lam v e) = do
+renameM (Lam v@TyVar{} e) = do
     fr <- fresh
     let v' = appendName v "_rn" fr 
     return $ Lam v' $ descend (replaceAllNames (varName v) (varName v') fr) e
 
-renameM (Let (NonRec v b) e) = do
+renameM (Let (NonRec v@TyVar{} b) e) = do
     fr <- fresh
     let v' = appendName v "_rn" fr
     return $ Let (NonRec v' b) $ descend (replaceAllNames (varName v) (varName v') fr) e
@@ -31,7 +37,7 @@ renameM (Let (Rec _) _) = return $ error "Recursive let not supported!"
 renameM x = return x
 
 replaceAllNames :: String -> String -> Int -> Expr Var -> Expr Var
-replaceAllNames oldName newName i (Var v) 
+replaceAllNames oldName newName i (Var v@TyVar{}) 
     | varName v == oldName = Var $ v {varName = newName, realUnique = i}
 replaceAllNames _ _ _ x =  x
 

@@ -1,9 +1,11 @@
-{-# Language DeriveDataTypeable, OverloadedStrings #-}
+{-# Language DeriveDataTypeable, OverloadedStrings, FlexibleInstances #-}
 module Core where
 import Type
+import Weight
 import qualified Data.Text as T
 import Data.Data
 import Data.Functor.Identity
+
 
 data Expr b 
     = Var Var
@@ -27,9 +29,13 @@ data Var
     = TyVar {
         varName    :: !String,
         realUnique :: !Int,
-        varType    :: Type
+        varType    :: Type,
+        varWeight  :: Weight
     }
-    deriving (Show,Eq,Ord,Data)
+    | Hole
+    deriving (Eq,Ord,Data)
+instance Show Var where
+    show v = "(TyVar " ++ varName v ++ ")"
 type Arg b = Expr b
 {-
 type Alt b = (AltCon, [b], Expr b)
@@ -44,14 +50,21 @@ data Bind b
     = NonRec b (Expr b)
     | Rec [(b, Expr b)]
     deriving (Data)
-instance Show (Bind b) where
-    show (NonRec _ e) = "Bind "
+instance Show b => Show (Bind b) where
+    show (NonRec v e) = "NonRec (" ++ show v ++ ") (" ++ show e ++ ")"
+
+data Function = Function {
+    fName :: String,
+    fType :: Type,
+    fBody :: Expr Var
+    }
+    deriving (Show,Data)
 
 mkVar :: String -> Type -> Var
-mkVar s t = TyVar { varName=s,realUnique=0,varType=t}
+mkVar s t = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
 
 iVar :: String -> Var
-iVar s = TyVar { varName=s,realUnique=0,varType=TCon "Int"}
+iVar s = TyVar { varName=s,realUnique=0,varType=TCon "Int",varWeight=Omega}
 
 
 class Monad m => FreshMonad m where
@@ -88,4 +101,7 @@ descendBindM f b =
 descend :: (Expr b -> Expr b) -> Expr b -> Expr b
 descend f ex = runIdentity (descendM (return . f) ex)
 
+replaceAllVars :: Var -> Expr Var -> Expr Var -> Expr Var
+replaceAllVars s r (Var v) | s == v = r
+replaceAllVars _ _ e = e
 

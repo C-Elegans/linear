@@ -11,3 +11,6 @@ data Type
 
 data TVar = TV String
     deriving (Show, Eq, Ord,Data)
+
+tInt :: Type
+tInt = TCon "Int"

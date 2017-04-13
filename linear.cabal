@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 executable linear
   main-is:             Main.hs
   other-modules:       
-    Core, Core.Renamer,Pretty,Type
+    Core, Core.Renamer,Pretty,Type,Core.Passes,Core.Simplify
   -- other-extensions:    
   build-depends:        base   >= 4.9 && <4.9.2,
                         pretty >= 1.1 && <= 1.2,
