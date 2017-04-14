@@ -16,6 +16,10 @@ strengthreduce (Let (NonRec v@TyVar{} b) e)
     | countOccurences v e == 1 = do
         let newVar = v {varWeight = One}
         return $ Let (NonRec newVar b) (descend (replaceAllVars v (Var newVar)) e)
+strengthreduce (Case e v@TyVar{} t a)
+    | argcount v a == 1 = do
+        let newVar = v {varWeight = One}
+        return $ descend (replaceAllVars v (Var newVar)) $ Case e newVar t a
 strengthreduce e = return e
 
 countOccurences :: Var -> Expr Var -> Int
@@ -30,3 +34,9 @@ countOccurences v (Case e _ _ a) =
     
 countOccurences _ (Lit _) = 0
 countOccurences _ _ = 0
+
+argcount :: Var ->[Alt Var] -> Int
+argcount v args =
+    let exprs = map (\(_,_,e) -> e) args
+        counts = map (countOccurences v) exprs
+    in maximum counts

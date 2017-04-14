@@ -15,7 +15,7 @@ data Expr b
     | Lam b (Expr b)
     | Let (Bind b) (Expr b)
     | Op Binop (Expr b) (Expr b)
-    | Case (Expr b) b Type [Alt b]
+    | Case (Expr b) b Type [Alt b] -- b (the binder), is the value of the case expresison
     | Type Type
     deriving (Show,Data,Eq)
 

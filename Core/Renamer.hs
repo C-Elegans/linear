@@ -28,6 +28,17 @@ renameM (Let (NonRec v@TyVar{} b) e) = do
     
 renameM (Let (Rec _) _) = return $ error "Recursive let not supported!"
 
+renameM (Case b v@TyVar{} t alts) = do
+    fr <- fresh
+    let v' = appendName v "_rn" fr
+    let alts' = rp v v' fr alts
+    return $! Case b v' t alts'
+    where
+        rp :: Var -> Var -> Int -> [Alt Var] -> [Alt Var]
+        rp v v' fr ((ac,b,e):rest) =
+            let e' = descend (replaceAllNames (varName v) (varName v') fr) e
+            in (ac,b,e'):(rp v v' fr rest)
+        rp _ _ _ [] = []
 renameM x = return x
 
 replaceAllNames :: String -> String -> Int -> Expr Var -> Expr Var
