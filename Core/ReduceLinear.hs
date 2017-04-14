@@ -1,20 +1,26 @@
 module Core.ReduceLinear where
 import Core
+import Core.Helper
 import Weight
 import Debug.Trace (trace)
 
-reduceLinear :: [Function] -> [Function]
-reduceLinear = map (\f -> f {fBody= descend strengthreduce (fBody f)}) 
-strengthreduce :: Expr Var -> Expr Var
+reduceLinear :: [Function] -> CompilerM [Function]
+reduceLinear = mapM rl
+    where
+    rl :: Function -> CompilerM Function
+    rl f = do
+        b <- descendM strengthreduce (fBody f)
+        return $ f {fBody=b}
+strengthreduce :: Expr Var -> CompilerM (Expr Var)
 strengthreduce (Lam v@TyVar{} e) 
-    | countOccurences v e == 1 =
+    | countOccurences v e == 1 = do
         let newVar = v {varWeight = One}
-        in Lam newVar (descend (replaceAllVars v (Var newVar)) e)
+        return $ Lam newVar (descend (replaceAllVars v (Var newVar)) e)
 strengthreduce (Let (NonRec v@TyVar{} b) e) 
-    | countOccurences v e == 1 = 
+    | countOccurences v e == 1 = do
         let newVar = v {varWeight = One}
-        in Let (NonRec newVar b) (descend (replaceAllVars v (Var newVar)) e)
-strengthreduce e = e
+        return $ Let (NonRec newVar b) (descend (replaceAllVars v (Var newVar)) e)
+strengthreduce e = return e
 
 countOccurences :: Var -> Expr Var -> Int
 countOccurences v (Var v2) | v == v2 = 1

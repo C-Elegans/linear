@@ -2,6 +2,7 @@
 module Core.Renamer 
     where
 import Core
+import Core.Helper
 import Pretty
 import Debug.Trace (trace)
 import Control.Monad.State
@@ -10,24 +11,17 @@ import Control.Monad.State
  - variables with unique names
 -}
 
-type RenameMonad = State Int
 
-instance FreshMonad RenameMonad where
-    fresh = do
-        u <- get
-        put $ u+1
-        return u
-
-rename :: [Function] -> [Function]
-rename = map rn 
+rename :: [Function] -> CompilerM [Function]
+rename = mapM rn 
     where
-    rn :: Function -> Function
-    rn f = 
+    rn :: Function -> CompilerM Function
+    rn f = do 
         let b = fBody f
-            b' = evalState (descendM renameM b) 0
-        in f {fBody = b'}
+        b' <- descendM renameM b 
+        return $ f {fBody = b'}
 
-renameM :: Expr Var -> RenameMonad (Expr Var)
+renameM :: Expr Var -> CompilerM (Expr Var)
 renameM (Lam v@TyVar{} e) = do
     fr <- fresh
     let v' = appendName v "_rn" fr 

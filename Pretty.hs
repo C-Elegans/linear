@@ -1,6 +1,6 @@
 {-# Language TypeSynonymInstances #-}
 {-# Language FlexibleInstances #-}
-module Pretty where
+module Pretty( ppr, pp, banner, render, Pretty) where
 import Core
 import Type
 import Weight
@@ -55,3 +55,13 @@ instance Pretty Function where
 
 pp :: Pretty p => Bool -> p -> String
 pp tp p= render $ ppr 0 tp p 
+
+banner :: String -> String
+banner msg = render $
+  text (replicate n '=')
+  <+>
+  text msg
+  <+>
+  text (replicate n '=')
+  where
+    n = (76 - length msg) `div` 2

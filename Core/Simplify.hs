@@ -3,24 +3,25 @@ module Core.Simplify(
     runSimplify
     ) where
 import Core
+import Core.Helper
 import Pretty (pp)
 import Debug.Trace (trace)
 import Control.Monad.State
 
-runSimplify :: [Function] -> [Function]
-runSimplify = map rs
+runSimplify :: [Function] -> CompilerM [Function]
+runSimplify = mapM rs
     where 
-    rs f = 
-        let body = evalState (descendM simplifyPasses (fBody f)) 0
-        in f {fBody = body}
+    rs f = do 
+        body <- descendM simplifyPasses (fBody f)
+        return $ f {fBody = body}
 
-simplifyPasses :: Expr Var -> SimplifyMonad (Expr Var)
+simplifyPasses :: Expr Var -> CompilerM (Expr Var)
 simplifyPasses e = 
     constProp e >>=
     removeUnused
     
 -- Replaces constant variables in let bindings with the constant
-constProp :: Expr Var -> SimplifyMonad (Expr Var)
+constProp :: Expr Var -> CompilerM (Expr Var)
 {-constProp e@(Let _ _) | trace (show e) False = undefined-}
 constProp (Let (NonRec v l@(Lit _)) e) = do
     let e' = descend (replaceAllVars v l) e
@@ -28,7 +29,7 @@ constProp (Let (NonRec v l@(Lit _)) e) = do
 constProp x = exprSimplify x
 
 -- Simplifies constant expressions
-exprSimplify :: Expr Var -> SimplifyMonad (Expr Var)
+exprSimplify :: Expr Var -> CompilerM (Expr Var)
 {-exprSimplify e | trace (pp False e) False = undefined-}
 exprSimplify (Op op e1 e2) = do
     e1' <- exprSimplify e1
@@ -50,7 +51,7 @@ exprSimplify (Op op e1 e2) = do
 exprSimplify x = return x
 
 --removes unused variables 
-removeUnused :: Expr Var -> SimplifyMonad (Expr Var)
+removeUnused :: Expr Var -> CompilerM (Expr Var)
 removeUnused (Lam v@TyVar{} e) 
     | varUnused v e = return (Lam Hole e)
 removeUnused (Let (NonRec v@TyVar{} b) e)
@@ -64,10 +65,4 @@ varUnused v (Lam _ e) = varUnused v e
 varUnused v (Let (NonRec _ b) e) = varUnused v b && varUnused v e
 varUnused v (Op _ e1 e2) = varUnused v e1 && varUnused v e2
 varUnused v _ = False
-type SimplifyMonad = State Int
 
-instance FreshMonad SimplifyMonad where
-    fresh = do
-        fr <- get
-        put (fr + 1)
-        return fr
