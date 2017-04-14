@@ -11,6 +11,7 @@ data Flag
     | DumpRename
     | DumpSimp
     | DumpLin
+    | DumpAtom
     deriving (Eq,Ord,Show)
 
 initialFlags :: Flags
@@ -31,6 +32,7 @@ flags =
     , ("ddump-rn"   , DumpRename)
     , ("ddump-simp" , DumpSimp)
     , ("ddump-lin"  , DumpLin)
+    , ("ddump-atom" , DumpAtom)
     ]
 
 matches :: String -> (String, Flag) -> Maybe Flag

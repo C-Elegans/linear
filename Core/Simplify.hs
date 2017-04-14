@@ -9,16 +9,14 @@ import Debug.Trace (trace)
 import Control.Monad.State
 
 runSimplify :: [Function] -> CompilerM [Function]
-runSimplify = mapM rs
-    where 
-    rs f = do 
-        body <- descendM simplifyPasses (fBody f)
-        return $ f {fBody = body}
+runSimplify = functionApply (descendM simplifyPasses) 
 
 simplifyPasses :: Expr Var -> CompilerM (Expr Var)
 simplifyPasses e = 
     constProp e >>=
-    removeUnused
+    removeUnused >>=
+    betaReduce >>=
+        \e' -> if e /= e' then simplifyPasses e' else return e'
     
 -- Replaces constant variables in let bindings with the constant
 constProp :: Expr Var -> CompilerM (Expr Var)
@@ -51,6 +49,20 @@ exprSimplify (Op op e1 e2) = do
 exprSimplify x = return x
 
 --removes unused variables 
+
+
+{-
+ - These transformations are described in doc/simplifier.pdf, and should
+ - be very similar to those in GHC
+ -}
+
+-- 3.1: Beta reduction
+betaReduce :: Expr Var -> CompilerM (Expr Var)
+betaReduce (App (Lam v@TyVar{} e) (Var v2@TyVar{})) = 
+    return $! descend (replaceAllVars v (Var v2)) e
+betaReduce e = return e
+
+-- 3.5.1: Dead var removal
 removeUnused :: Expr Var -> CompilerM (Expr Var)
 removeUnused (Lam v@TyVar{} e) 
     | varUnused v e = return (Lam Hole e)
@@ -65,4 +77,3 @@ varUnused v (Lam _ e) = varUnused v e
 varUnused v (Let (NonRec _ b) e) = varUnused v b && varUnused v e
 varUnused v (Op _ e1 e2) = varUnused v e1 && varUnused v e2
 varUnused v _ = False
-

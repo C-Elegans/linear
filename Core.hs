@@ -1,4 +1,4 @@
-{-# Language DeriveDataTypeable, OverloadedStrings, FlexibleInstances #-}
+{-# Language DeriveDataTypeable, OverloadedStrings, FlexibleInstances, ScopedTypeVariables #-}
 module Core where
 import Type
 import Weight
@@ -17,7 +17,7 @@ data Expr b
     | Op Binop (Expr b) (Expr b)
     | Case (Expr b) b Type [Alt b]
     | Type Type
-    deriving (Show,Data)
+    deriving (Show,Data,Eq)
 
 data Literal 
     = Int Int
@@ -34,9 +34,10 @@ data Var
         varWeight  :: Weight
     }
     | Hole
-    deriving (Eq,Ord,Data)
-instance Show Var where
-    show v = "(TyVar " ++ varName v ++ ")"
+    deriving (Eq,Ord,Data,Show)
+{-instance Show Var where-}
+    {-show v@TyVar{} = "(TyVar " ++ varName v ++ ")"-}
+    {-show Hole = "_"-}
 type Arg b = Expr b
 type Alt b = (AltCon, [b], Expr b)
 
@@ -49,7 +50,7 @@ data AltCon
 data Bind b 
     = NonRec b (Expr b)
     | Rec [(b, Expr b)]
-    deriving (Data)
+    deriving (Data,Eq)
 instance Show b => Show (Bind b) where
     show (NonRec v e) = "NonRec (" ++ show v ++ ") (" ++ show e ++ ")"
 
@@ -74,11 +75,12 @@ class Monad m => FreshMonad m where
     fresh :: m Int
 --  freshName takes the variable name and module name and removes
 --  the old module name and appends the new module name and a unique number
-    freshName :: String -> String -> m String
-    freshName str mod = do
-        let (pre,_) = T.breakOnEnd "_" (T.pack str) 
+    freshName :: String -> Var -> m Var
+    freshName pre v@TyVar{} = do
         fr <- fresh
-        return $ T.unpack pre ++ "_" ++ mod ++ show fr
+        let (old,_) = T.breakOnEnd "_" (T.pack $ varName v)
+            new = T.unpack old ++ "_" ++ pre ++ show fr
+        return $! v {varName=new, realUnique=fr}
 
 descendM :: (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> Expr b -> m (Expr b)
 descendM f e = 
@@ -116,4 +118,21 @@ descendA _ [] = return []
 replaceAllVars :: Var -> Expr Var -> Expr Var -> Expr Var
 replaceAllVars s r (Var v) | s == v = r
 replaceAllVars _ _ e = e
+
+functionApply :: forall m. Monad m => (Expr Var -> m (Expr Var)) -> [Function] -> m [Function]
+functionApply tr = 
+    mapM fn 
+    where   
+        fn :: Function -> m Function
+        fn f =  do
+            let bdy = fBody f
+            bdy' <- tr bdy
+            return $ f {fBody=bdy'}
+
+exprType :: Expr Var -> Type
+exprType (Var v@TyVar{varType=t}) = t
+exprType (Op op l r) = exprType l
+exprType (Lit (Int _)) = tInt
+exprType (Lit (Bool _)) = tBool
+exprType x = error $ "No exprType defined for " ++ show x
 

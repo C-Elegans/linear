@@ -5,12 +5,8 @@ import Weight
 import Debug.Trace (trace)
 
 reduceLinear :: [Function] -> CompilerM [Function]
-reduceLinear = mapM rl
-    where
-    rl :: Function -> CompilerM Function
-    rl f = do
-        b <- descendM strengthreduce (fBody f)
-        return $ f {fBody=b}
+reduceLinear = functionApply (descendM strengthreduce) 
+
 strengthreduce :: Expr Var -> CompilerM (Expr Var)
 strengthreduce (Lam v@TyVar{} e) 
     | countOccurences v e == 1 = do
@@ -29,5 +25,8 @@ countOccurences v (Lam v2 e) = if v == v2 then
     1 + countOccurences v e else countOccurences v e
 countOccurences v (Let (NonRec _ b) e) = countOccurences v b + countOccurences v e
 countOccurences v (Op _ e1 e2) = countOccurences v e1 + countOccurences v e2
+countOccurences v (Case e _ _ a) = 
+    countOccurences v e + sum ( map (\(_,_,e) -> countOccurences v e) a)
+    
 countOccurences _ (Lit _) = 0
 countOccurences _ _ = 0

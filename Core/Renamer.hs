@@ -13,13 +13,7 @@ import Control.Monad.State
 
 
 rename :: [Function] -> CompilerM [Function]
-rename = mapM rn 
-    where
-    rn :: Function -> CompilerM Function
-    rn f = do 
-        let b = fBody f
-        b' <- descendM renameM b 
-        return $ f {fBody = b'}
+rename = functionApply (descendM renameM)
 
 renameM :: Expr Var -> CompilerM (Expr Var)
 renameM (Lam v@TyVar{} e) = do

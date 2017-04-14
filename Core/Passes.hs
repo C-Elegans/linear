@@ -10,12 +10,14 @@ import Pretty
 import Core.Renamer
 import Core.Simplify
 import Core.ReduceLinear
+import Core.Atomize
 
 passes :: [Function] -> CompilerM [Function]
 passes fs = 
+    printPass DumpCore fs                 >>=
 
-    return fs    >>= printPass DumpCore   >>=
     rename       >>= printPass DumpRename >>=
+    atomize      >>= printPass DumpAtom   >>=
     runSimplify  >>= printPass DumpSimp   >>=
     reduceLinear >>= printPass DumpLin
 

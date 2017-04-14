@@ -20,13 +20,13 @@ instance Pretty Var where
             text (varName x) <> ppr 0 True weight
     ppr _ _ Hole          = "_"
 instance Pretty Weight where
-    ppr _ _ Omega = ":ω"
-    ppr _ _ One   = ":1"
-    ppr _ _ Zero  = ":0"
+    ppr _ _ Omega = empty
+    ppr _ _ One   = text ":1"
+    ppr _ _ Zero  = text ":0"
 
 instance Pretty (Expr Var) where
     ppr p tp (Var a)      = ppr p tp a
-    ppr p tp (App a b)    = parensIf (p>0) $ ppr (p+1) tp a <+> ppr p tp b
+    ppr p tp (App a b)    = parens (ppr p tp a) <+> ppr p tp b
     ppr p tp (Lam a b)    = vcat [text "\\" <> ppr p tp a <+> text "->" ,
                                   nest 4 $ ppr p tp b]
     ppr p tp (Let a b)    = text "let " <> ppr p tp a $$ text "in" <+> ppr p tp b
