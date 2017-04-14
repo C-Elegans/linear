@@ -2,6 +2,7 @@
 module Core where
 import Type
 import Weight
+import DataCon
 import qualified Data.Text as T
 import Data.Data
 import Data.Functor.Identity
@@ -14,7 +15,7 @@ data Expr b
     | Lam b (Expr b)
     | Let (Bind b) (Expr b)
     | Op Binop (Expr b) (Expr b)
-    {-| Case (Expr b) b Type [Alt b]-}
+    | Case (Expr b) b Type [Alt b]
     | Type Type
     deriving (Show,Data)
 
@@ -37,15 +38,14 @@ data Var
 instance Show Var where
     show v = "(TyVar " ++ varName v ++ ")"
 type Arg b = Expr b
-{-
 type Alt b = (AltCon, [b], Expr b)
 
 data AltCon
-    = DataAlt DataCon
-    | LitAlt Literal
+    = LitAlt Literal
+    {-| DataAlt DataCon-}
     | Default
-    deriving (Eq, Data)
--}
+    deriving (Eq, Data, Show)
+
 data Bind b 
     = NonRec b (Expr b)
     | Rec [(b, Expr b)]
@@ -60,11 +60,14 @@ data Function = Function {
     }
     deriving (Show,Data)
 
-mkVar :: String -> Type -> Var
-mkVar s t = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
+mkVar :: Type -> String -> Var
+mkVar t s = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
 
 iVar :: String -> Var
-iVar s = TyVar { varName=s,realUnique=0,varType=TCon "Int",varWeight=Omega}
+iVar = mkVar $ TCon "Int"
+
+bVar :: String -> Var
+bVar = mkVar $ TCon "Bool"
 
 
 class Monad m => FreshMonad m where
@@ -86,6 +89,7 @@ descendM f e =
                 Lam b e -> Lam <$> pure b <*> descendM f e
                 Let b e -> Let <$> descendBindM f b <*> descendM f e
                 Op o e1 e2 -> Op <$> pure o <*> descendM f e1 <*> descendM f e2
+                Case e b t alts -> Case <$> descendM f e <*> pure b <*> pure t <*> descendA f alts
                 Type t -> Type <$> pure t
     in res >>= f
 
@@ -100,6 +104,14 @@ descendBindM f b =
 
 descend :: (Expr b -> Expr b) -> Expr b -> Expr b
 descend f ex = runIdentity (descendM (return . f) ex)
+
+descendA :: (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> [Alt b] -> m [Alt b] 
+descendA f ((c,b,e):rest) = do
+    e' <- f e
+    r' <- descendA f rest
+    return $ (c,b,e'):r'
+descendA _ [] = return []
+    
 
 replaceAllVars :: Var -> Expr Var -> Expr Var -> Expr Var
 replaceAllVars s r (Var v) | s == v = r

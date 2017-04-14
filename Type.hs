@@ -14,3 +14,6 @@ data TVar = TV String
 
 tInt :: Type
 tInt = TCon "Int"
+
+tBool :: Type
+tBool = TCon "Bool"
