@@ -45,7 +45,7 @@ data AltCon
     = LitAlt Literal
     {-| DataAlt DataCon-}
     | Default
-    deriving (Eq, Data, Show)
+    deriving (Eq,Ord, Data, Show)
 
 data Bind b 
     = NonRec b (Expr b)

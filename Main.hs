@@ -5,6 +5,8 @@ import Core.Passes
 import Pretty
 import Type
 import Flags
+import Stg
+import Stg.CoreToStg
 import Data.Maybe (mapMaybe)
 import System.Environment
 import qualified Data.Set as S
@@ -14,7 +16,7 @@ innerExpr2 = Let (NonRec (iVar "x") (Op Add (Var (iVar "a")) (Var (iVar "b")))) 
 testExpr  = Lam (iVar "a") $ Lam (iVar "b") $ Lam (iVar "c") innerExpr
 testExpr2  = Lam (iVar "a") $ Lam (iVar "b") $ Lam (iVar "c") innerExpr2
 testExpr3  = Lam (iVar "b") $ Case (Op Add (Var (iVar "b")) (Lit (Int 1))) (iVar "binder") (TCon "Bool")
-    [(LitAlt (Int 1), [], Lit (Int 1)), (Default, [], Var (iVar "binder"))]
+    [(LitAlt (Int 1), [], Lit (Int 1)), (Default, [iVar "x"], Var (iVar "x"))]
 testExpr4  = Lam (iVar "a") $ App (Lam (iVar "b") (Op Add (Var (iVar "b")) (Lit (Int 1)))) (Var (iVar "a"))
 
 func = Function {fName="test", fType= tInt `TArr` tInt `TArr` tInt `TArr` tInt, fBody=testExpr}
@@ -34,5 +36,7 @@ main = do
         Right funcs' -> do 
             putStrLn $ banner  "Output"
             mapM_ (putStrLn . pp False) funcs'
+            (Right stg,_) <- runCompilerM (coreToStg [funcs' !! 0]) (emptyCs)
+            mapM_ (putStrLn . pp False) stg 
         Left err -> putStrLn $ "Error: " ++  err
 

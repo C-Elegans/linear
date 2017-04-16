@@ -59,6 +59,8 @@ instance Pretty Function where
     ppr p False f= text (fName f) <+> text "=" $$ nest 4 (ppr p False (fBody f))
 instance Pretty (Alt Var) where
     ppr p tp (c,[],e) = ppr p tp c <+> "->" <+> ppr p tp e
+    ppr p tp (Default,bs,e) = hsep (map (ppr p tp) bs) <+> "->" <+> ppr p tp e
+    ppr p tp (c,bs,e) = ppr p tp c <+> hsep (map (ppr p tp) bs) <+> "->" <+> ppr p tp e
 instance Pretty AltCon where
     ppr p tp (LitAlt l) = ppr p tp l
     ppr p _  Default    = text "_"

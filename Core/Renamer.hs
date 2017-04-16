@@ -52,3 +52,5 @@ replaceAllNames _ _ _ x =  x
 
 appendName :: Var -> String -> Int -> Var
 appendName v s i = v {varName = varName v ++ s ++ show i, realUnique = i}
+
+

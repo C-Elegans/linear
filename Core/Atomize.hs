@@ -20,7 +20,8 @@ atomizeM (Case e b t a) = do
     return (Let (NonRec tv e) (Case (Var tv) b t a))
 atomizeM (App l e) = do
     tv <- newTv e
-    return (Let (NonRec tv e) (App l (Var tv)))
+    f  <- newTv l
+    return $! Let (NonRec tv e) $ Let (NonRec f l) (App l (Var tv))
 atomizeM x = return x
 
 newTv :: Expr Var -> CompilerM Var
