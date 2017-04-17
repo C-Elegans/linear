@@ -36,7 +36,8 @@ main = do
         Right funcs' -> do 
             putStrLn $ banner  "Output"
             mapM_ (putStrLn . pp False) funcs'
-            (Right stg,_) <- runCompilerM (coreToStg [funcs' !! 0]) (emptyCs)
+            (Right stg,_) <- runCompilerM (coreToStg funcs') (emptyCs)
+            putStrLn $ banner "Stg"
             mapM_ (putStrLn . pp False) stg 
         Left err -> putStrLn $ "Error: " ++  err
 
