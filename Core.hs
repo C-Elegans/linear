@@ -134,5 +134,6 @@ exprType (Var v@TyVar{varType=t}) = t
 exprType (Op op l r) = exprType l
 exprType (Lit (Int _)) = tInt
 exprType (Lit (Bool _)) = tBool
+exprType (Lam v e) = varType v `TArr` exprType e
 exprType x = error $ "No exprType defined for " ++ show x
 

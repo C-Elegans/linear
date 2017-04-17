@@ -13,9 +13,10 @@ runSimplify = functionApply (descendM simplifyPasses)
 
 simplifyPasses :: Expr Var -> CompilerM (Expr Var)
 simplifyPasses e = 
-    constProp e >>=
+    constProp e  >>=
     removeUnused >>=
-    betaReduce >>=
+    betaReduce   >>=
+    redundantLet >>=
         \e' -> if e /= e' then simplifyPasses e' else return e'
     
 -- Replaces constant variables in let bindings with the constant
@@ -69,6 +70,15 @@ removeUnused (Lam v@TyVar{} e)
 removeUnused (Let (NonRec v@TyVar{} b) e)
     | varUnused v e = return e
 removeUnused l = return l
+
+-- Replace redundant let
+-- Ex. let x = a
+--     in x + 1
+
+redundantLet :: Expr Var -> CompilerM (Expr Var)
+redundantLet (Let (NonRec v e@(Var _)) i) = 
+    return $! descend (replaceAllVars v e) i
+redundantLet e = return e
 
 varUnused v (Var v2) = v/=v2
 varUnused v (Lit _) = True

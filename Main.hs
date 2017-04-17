@@ -12,7 +12,7 @@ import System.Environment
 import qualified Data.Set as S
 
 innerExpr = Let (NonRec (iVar "x") (Op Add (Lit (Int 3)) (Lit (Int 4)))) (Op Add (Var (iVar "x")) (Var (iVar "c")))
-innerExpr2 = Let (NonRec (iVar "x") (Op Add (Var (iVar "a")) (Var (iVar "b")))) (Op Add (Var (iVar "x")) (Var (iVar "c")))
+innerExpr2 = (Op Add (Op Add (Var (iVar "a")) (Var (iVar "b"))) (Var (iVar "c")))
 testExpr  = Lam (iVar "a") $ Lam (iVar "b") $ Lam (iVar "c") innerExpr
 testExpr2  = Lam (iVar "a") $ Lam (iVar "b") $ Lam (iVar "c") innerExpr2
 testExpr3  = Lam (iVar "b") $ Case (Op Add (Var (iVar "b")) (Lit (Int 1))) (iVar "binder") (TCon "Bool")

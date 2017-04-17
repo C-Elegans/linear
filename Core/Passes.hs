@@ -17,8 +17,8 @@ passes fs =
     printPass DumpCore fs                 >>=
 
     rename       >>= printPass DumpRename >>=
-    atomize      >>= printPass DumpAtom   >>=
     runSimplify  >>= printPass DumpSimp   >>=
+    atomize      >>= printPass DumpAtom   >>=
     reduceLinear >>= printPass DumpLin
 
 printPass :: Flag -> [Function] -> CompilerM [Function]
