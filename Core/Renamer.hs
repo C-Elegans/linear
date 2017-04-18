@@ -51,7 +51,7 @@ renameM (Case b e t alts) =
         rn :: Alt Var -> CompilerM (Alt Var)
         rn a@(c,b,e) = do
             b' <- mapM rv b
-            let bzipped = trace (show a) $ zip b b'
+            let bzipped = zip b b'
             let e' = foldl' (\e (b,(b',fr)) -> 
                                 descend (replaceAllNames (varName b) (varName b') fr) e)
                         e bzipped

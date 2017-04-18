@@ -12,6 +12,7 @@ module Core
     , FreshMonad(..)
     , descendM
     , descend
+    , descendA
     , functionApply
     -- From Type.hs
     , Var(..)
@@ -27,6 +28,7 @@ import qualified Data.Text as T
 import Data.Data
 import Data.Functor.Identity
 import Data.List
+import Debug.Trace
 
 
 data Expr b 
@@ -114,13 +116,13 @@ descendBindM f b =
 descend :: (Expr b -> Expr b) -> Expr b -> Expr b
 descend f ex = runIdentity (descendM (return . f) ex)
 
-descendA :: (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> [Alt b] -> m [Alt b] 
-descendA f ((c,b,e):rest) = do
-    e' <- descendM f e
-    r' <- descendA f rest
-    return $ (c,b,e'):r'
-descendA _ [] = return []
-    
+descendA :: forall b m. (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> [Alt b] -> m [Alt b] 
+descendA f = mapM (da f)
+    where
+    da :: (Expr b -> m (Expr b)) ->  Alt b -> m (Alt b)
+    da f (c,b,a) = do
+        a' <- descendM f a
+        return (c,b,a')
 
 replaceAllVars :: Var -> Expr Var -> Expr Var -> Expr Var
 replaceAllVars s r (Var v) | s == v = r

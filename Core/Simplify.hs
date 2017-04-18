@@ -1,8 +1,10 @@
 {-# Language TypeSynonymInstances, FlexibleInstances #-}
 module Core.Simplify(
-    runSimplify
+    runSimplify,
+    knownCase
     ) where
 import Core
+import Type
 import Core.Helper
 import Pretty (pp)
 import Debug.Trace (trace)
@@ -17,6 +19,7 @@ simplifyPasses e =
     removeUnused >>=
     betaReduce   >>=
     redundantLet >>=
+    knownCase >>=
         \e' -> if e /= e' then simplifyPasses e' else return e'
     
 -- Replaces constant variables in let bindings with the constant
@@ -57,6 +60,18 @@ exprSimplify x = return x
  - be very similar to those in GHC
  -}
 
+-- 3.3.1: Case of known constructor
+knownCase :: Expr Var -> CompilerM (Expr Var)
+knownCase (Case e _ _ _) | trace (show e) False = undefined
+knownCase (Case (App cons@(Var v) e) bnd t [(c,[b],a)]) -- Single alternative
+   | isConstr v = 
+        return $ descend (replaceAllVars b e) a
+
+--Properly descend on case alternatives. descendM doesn't do this properly for some reason
+knownCase (Case e b t alts) = do
+    alts' <- descendA knownCase alts 
+    return $ Case e b t alts'
+knownCase e = return e
 -- 3.1: Beta reduction
 betaReduce :: Expr Var -> CompilerM (Expr Var)
 betaReduce (App (Lam v@TyVar{} e) a) = 

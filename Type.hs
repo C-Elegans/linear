@@ -24,7 +24,14 @@ data Var
         varWeight  :: Weight
     }
     | Hole
-    deriving (Eq,Ord,Data,Show)
+    deriving (Ord,Data)
+
+instance Eq Var where
+     Hole == Hole = True
+     v == v2 = (varName v) == (varName v2) && (realUnique v) == (realUnique v2)
+instance Show Var where
+    show Hole = "_"
+    show v = varName v
 
 tInt :: Type
 tInt = TCon "Int"
@@ -47,5 +54,7 @@ iVarU = mkVar $ TCon "Int#"
 mkVar :: Type -> String -> Var
 mkVar t s = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
 
-
+isConstr :: Var -> Bool
+isConstr TyVar {varType=TyConApp _ _} = True
+isConstr _ = False
 
