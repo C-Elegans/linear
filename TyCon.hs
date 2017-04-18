@@ -51,5 +51,3 @@ data TyConBndrVis
 
 data ArgFlag = Required | Specified | Inferred
     deriving (Eq, Data,Show,Ord)
-
-

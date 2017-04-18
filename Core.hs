@@ -68,11 +68,12 @@ instance Show b => Show (Bind b) where
     show (NonRec v e) = "NonRec (" ++ show v ++ ") (" ++ show e ++ ")"
 
 data Function = Function {
-    fName :: String,
-    fType :: Type,
-    fBody :: Expr Var
+    fName        :: String,
+    fType        :: Type,
+    fBody        :: Expr Var,
+    alwaysInline :: Bool
     }
-    deriving (Show,Data)
+    deriving (Show,Data,Eq)
 
 
 
@@ -141,6 +142,10 @@ exprType (Op op l r) = exprType l
 exprType (Lit (Int _)) = tInt
 exprType (Lit (Bool _)) = tBool
 exprType (Lam v e) = varType v `TArr` exprType e
+exprType (App f e) = 
+    case exprType f of
+        TArr t t2 -> t2
+        _ -> error $ show f ++ "Is not a function"
 exprType x = error $ "No exprType defined for " ++ show x
 
 getFree :: Expr Var -> [Var]

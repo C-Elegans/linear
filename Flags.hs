@@ -12,10 +12,13 @@ data Flag
     | DumpSimp
     | DumpLin
     | DumpAtom
+    | DumpInline
     deriving (Eq,Ord,Show)
 
 initialFlags :: Flags
 initialFlags = S.empty
+
+allFlags = S.fromList $ map snd flags
 
 isSet :: Flags -> Flag -> Bool
 isSet = flip S.member
@@ -28,11 +31,12 @@ unset = flip S.delete
 
 flags :: [(String, Flag)]
 flags = 
-    [ ("ddump-core" , DumpCore)
-    , ("ddump-rn"   , DumpRename)
-    , ("ddump-simp" , DumpSimp)
-    , ("ddump-lin"  , DumpLin)
-    , ("ddump-atom" , DumpAtom)
+    [ ("ddump-core"   , DumpCore)
+    , ("ddump-rn"     , DumpRename)
+    , ("ddump-simp"   , DumpSimp)
+    , ("ddump-lin"    , DumpLin)
+    , ("ddump-atom"   , DumpAtom)
+    , ("ddump-inline" , DumpInline)
     ]
 
 matches :: String -> (String, Flag) -> Maybe Flag

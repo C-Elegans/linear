@@ -59,8 +59,8 @@ exprSimplify x = return x
 
 -- 3.1: Beta reduction
 betaReduce :: Expr Var -> CompilerM (Expr Var)
-betaReduce (App (Lam v@TyVar{} e) (Var v2@TyVar{})) = 
-    return $! descend (replaceAllVars v (Var v2)) e
+betaReduce (App (Lam v@TyVar{} e) a) = 
+    return $! descend (replaceAllVars v a) e
 betaReduce e = return e
 
 -- 3.5.1: Dead var removal

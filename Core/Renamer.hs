@@ -3,6 +3,7 @@ module Core.Renamer
     where
 import Core
 import Core.Helper
+import DefaultTypes
 import Pretty
 import Debug.Trace (trace)
 import Control.Monad.State
@@ -16,6 +17,7 @@ rename :: [Function] -> CompilerM [Function]
 rename = functionApply (descendM renameM)
 
 renameM :: Expr Var -> CompilerM (Expr Var)
+renameM (Lit (Int i)) = return $ App (Var iBoxV) (Lit (Int i))
 renameM (Lam v@TyVar{} e) = do
     fr <- fresh
     let v' = appendName v "_rn" fr 

@@ -20,6 +20,7 @@ coreExprToStg :: Expr Var -> CompilerM StgExpr
 coreExprToStg (Var v) = return $! GenStgApp v []
 coreExprToStg (Lit l) = return $! GenStgLit l 
 coreExprToStg (App (Var v) (Var a)) = return $! GenStgApp v [StgVarArg a]
+coreExprToStg (App (Var v) (Lit l)) = return $! GenStgApp v [StgLitArg l]
 coreExprToStg (Lam v1 v2) = GenStgLam [v1] <$> coreExprToStg v2
 coreExprToStg (Let (NonRec v e) i) = do
     e' <- coreExprToStg e

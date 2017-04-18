@@ -35,9 +35,9 @@ instance Pretty (Expr Var) where
     ppr p tp (Type t)     = ppr p tp t
     ppr p tp (Op o e1 e2) = parensIf (p>0) $ ppr p tp e1 <+> ppr p tp o <+> ppr p tp e2
     ppr p tp (Lit l)      = ppr p tp l
-    ppr p tp (Case e b t [(c,vs,ex)]) = --let! binding
-        text "let!" <+> ppr p tp c <+> hsep (map (ppr p tp) vs) <+> text "=" <+> ppr p tp e <$> 
-        text "in" <+> ppr p tp ex
+    {-ppr p tp (Case e b t [(c,vs,ex)]) = --let! binding-}
+        {-text "let!" <+> ppr p tp c <+> hsep (map (ppr p tp) vs) <+> text "=" <+> ppr p tp e <$> -}
+        {-text "in" <+> ppr p tp ex-}
         
     ppr p tp (Case e b t alts) = text "case" <+> ppr p tp e <+> text "of" <+> 
                                     ppr p tp b <$> vcat (map (nest 4 . ppr p tp) alts)

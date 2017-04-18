@@ -14,7 +14,3 @@ data DataCon = MkData {
     
     deriving(Eq,Ord,Show,Data)
 
-iBox :: DataCon
-iBox = MkData {dcName="I#", dcUnique=0, dcOrigArgTys=[tInt], dcOrigResTy=tIntU `TArr` tInt}
-iBoxV :: Var
-iBoxV = mkVar (tIntU `TArr` tInt) "I#"

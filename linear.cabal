@@ -16,7 +16,8 @@ executable linear
   main-is:             Main.hs
   other-modules:       
     Core, Core.Renamer,Pretty,Type,Core.Passes,Core.Simplify,
-    Core.Atomize, Core.Helper, Core.ReduceLinear, DataCon, Flags, Weight
+    Core.Atomize, Core.Helper, Core.ReduceLinear, DataCon, Flags, Weight,
+    Stg, Stg.Compile, Stg.CoreToStg, TyCon
   -- other-extensions:    
   build-depends:        base       >= 4.7 && <4.9.2,
                         wl-pprint  >= 1.1,

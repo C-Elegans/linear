@@ -5,6 +5,7 @@ import Core
 import Control.Monad.State
 import Control.Monad.Except
 import Control.Applicative
+import qualified Data.Map as Map
 import Data.Monoid
 
 type CompilerMonad = ExceptT Msg (StateT CoreState IO)
@@ -23,14 +24,16 @@ newtype CompilerM a = Compiler {runCompiler :: CompilerMonad a}
 
 data CoreState = CoreState {
     _currentUnique :: Int,
-    _flags :: Flags
+    _flags :: Flags,
+    _topLevelDefs :: Map.Map String Function
     }
     deriving (Eq,Show)
 
 emptyCs :: CoreState
 emptyCs = CoreState {
     _currentUnique = 0,
-    _flags = initialFlags
+    _flags = initialFlags,
+    _topLevelDefs = Map.empty
     }
 
 type Msg = String
@@ -51,3 +54,13 @@ ifSet :: Flag -> CompilerM a -> CompilerM ()
 ifSet flag m = do
     flags <- gets _flags
     when (isSet flags flag) (void m)
+
+putFunction :: Function -> CompilerM ()
+putFunction f = do
+    let name = fName f
+    modify' (\s -> s{_topLevelDefs = Map.insert name f (_topLevelDefs s)})
+
+getFunction :: String -> CompilerM (Maybe Function)
+getFunction n = do
+    st <- get
+    return $ Map.lookup n (_topLevelDefs st)
