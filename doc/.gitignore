@@ -1,3 +1,10 @@
 *.aux
 *.dvi
 *.log
+*.bbl
+*.blg
+*.fdb*
+*.fls
+*.out
+*.synctex*
+*.toc
