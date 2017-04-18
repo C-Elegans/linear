@@ -1,9 +1,8 @@
 {-# Language DeriveDataTypeable #-}
 module TyCon where
-import Type
+import {-# SOURCE #-} Type
 import Data.Data
 import DataCon
-type Kind = Type
 type Arity = Int
 type TyConRepName = String
 
@@ -32,22 +31,25 @@ data TyCon
         {-algTcFields   :: FieldLabelEnv-}
         {-algTcParent :: AlgTyConFlav-}
     }
+    deriving (Data,Show,Eq,Ord)
 
 data AlgTyConRhs
     = AbstractTyCon -- No data for the rhs.
     | DataTyCon {
         data_cons :: [DataCon]
     }
+    deriving (Data,Show,Eq,Ord)
 type TyVar = Var
 type TyConBinder = TyVarBndr TyVar TyConBndrVis
 data TyVarBndr tyvar argf = TvBndr tyvar argf
-    deriving(Data)
+    deriving(Data,Show,Eq,Ord)
 
 data TyConBndrVis
     = NamedTCB ArgFlag
     | AnonTCB
+    deriving (Data,Show,Eq,Ord)
 
 data ArgFlag = Required | Specified | Inferred
-    deriving (Eq, Data)
+    deriving (Eq, Data,Show,Ord)
 
 
