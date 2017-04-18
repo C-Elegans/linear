@@ -8,17 +8,24 @@ import Pretty
 import Data.List (foldl')
 import Debug.Trace (trace)
 import Control.Monad.State
+import qualified Data.Text as T
 {-
  - The renamer module resolves any name shadowing in its inputs by renaming all 
  - variables with unique names
 -}
 
 
+fixLits :: [Function] -> CompilerM [Function]
+fixLits = functionApply (descendM fl)
+    where
+    fl :: Expr Var -> CompilerM (Expr Var)
+    fl (Lit (Int i)) = return $ App (Var iBoxV) (Lit (Int i))
+    fl e = return e
+
 rename :: [Function] -> CompilerM [Function]
 rename = functionApply (descendM renameM)
 
 renameM :: Expr Var -> CompilerM (Expr Var)
-renameM (Lit (Int i)) = return $ App (Var iBoxV) (Lit (Int i))
 renameM (Lam v@TyVar{} e) = do
     fr <- fresh
     let v' = appendName v "_rn" fr 
@@ -75,6 +82,12 @@ replaceAllNames _ _ _ x =  x
     
 
 appendName :: Var -> String -> Int -> Var
-appendName v s i = v {varName = varName v ++ s ++ show i, realUnique = i}
+appendName v s i = 
+    if '_' `elem` (varName v) then
+        let (name,_) = T.breakOnEnd "_" $ T.pack $ varName v
+            name' = T.unpack $ T.init $ name
+        in v {varName = name' ++ s ++ show i, realUnique = i}
+    else
+        v {varName = varName v ++ s ++ show i, realUnique = i}
 
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module DataCon where
-import Type
+import {-# SOURCE #-} Type
 import Data.Data
 
 data DataCon = MkData {

@@ -15,15 +15,17 @@ import Core.Inliner
 
 passes :: [Function] -> CompilerM [Function]
 passes fs = 
-    printPass DumpCore fs                 `bind`
+    printPass DumpCore fs >>=
 
-    rename       `bind` printPass DumpRename `bind`
-    runSimplify  `bind` printPass DumpSimp   `bind`
-    put `bind` 
-    inline       `bind` printPass DumpInline `bind`
-    runSimplify  `bind` printPass DumpSimp   `bind`
-    atomize      `bind` printPass DumpAtom   `bind`
-    reduceLinear `bind` printPass DumpLin
+    fixLits      >>=
+    rename       >>= printPass DumpRename >>=
+    runSimplify  >>= printPass DumpSimp   >>=
+    put          >>=
+    inline       >>= printPass DumpInline >>=
+    rename       >>= printPass DumpRename >>=
+    runSimplify  >>= printPass DumpSimp   >>=
+    atomize      >>= printPass DumpAtom   >>=
+    reduceLinear >>= printPass DumpLin
 
 printPass :: Flag -> [Function] -> CompilerM [Function]
 printPass fl fs = do

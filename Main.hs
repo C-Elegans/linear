@@ -24,7 +24,7 @@ testExpr4  = Lam (iVar "a") $ App (Lam (iVar "b") (Op Add (Var (iVar "b")) (Lit 
 
 addExpr = Lam (iVar "a") $ Lam (iVar "b") $ Case (Var (iVar "a")) Hole tInt
     [(DataAlt iBox,[iVar "a'"], Case (Var (iVar "b")) Hole tInt 
-        [(DataAlt iBox,[iVar "b'"], App (Var iBoxV) (Op Add# (Var (iVarU "a'")) (Var (iVarU "b'"))))])]
+        [(DataAlt iBox,[iVar "b'"], Case (Op Add# (Var (iVar "a'")) (Var (iVar "b'"))) (iVar "r") tIntU [(Default,[],App (Var iBoxV) (Var (iVar "r")))])])]
 
 func = Function {fName="test", fType= tInt `TArr` tInt `TArr` tInt `TArr` tInt, 
     fBody=testExpr, alwaysInline=False}

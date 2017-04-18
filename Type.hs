@@ -2,6 +2,7 @@
 module Type where
 import {-# SOURCE #-} TyCon
 import Data.Data hiding (TyCon)
+import DataCon
 import Weight
 type Con = String
 type KindOrType = Type
@@ -24,14 +25,14 @@ data Var
         varWeight  :: Weight
     }
     | Hole
-    deriving (Ord,Data)
+    deriving (Ord,Data,Show)
 
 instance Eq Var where
      Hole == Hole = True
      v == v2 = (varName v) == (varName v2) && (realUnique v) == (realUnique v2)
-instance Show Var where
-    show Hole = "_"
-    show v = varName v
+{-instance Show Var where-}
+    {-show Hole = "_"-}
+    {-show v = varName v-}
 
 tInt :: Type
 tInt = TCon "Int"
@@ -58,3 +59,5 @@ isConstr :: Var -> Bool
 isConstr TyVar {varType=TyConApp _ _} = True
 isConstr _ = False
 
+
+    

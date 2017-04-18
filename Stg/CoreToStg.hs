@@ -1,6 +1,8 @@
 module Stg.CoreToStg where
 import Core
 import Core.Helper
+import DataCon
+import Type
 import Stg
 import Data.List
 import Debug.Trace (trace)
@@ -19,8 +21,13 @@ coreToStg = mapM funcToStg
 coreExprToStg :: Expr Var -> CompilerM StgExpr
 coreExprToStg (Var v) = return $! GenStgApp v []
 coreExprToStg (Lit l) = return $! GenStgLit l 
-coreExprToStg (App (Var v) (Var a)) = return $! GenStgApp v [StgVarArg a]
-coreExprToStg (App (Var v) (Lit l)) = return $! GenStgApp v [StgLitArg l]
+coreExprToStg (App (Var v) a) = 
+    case isConstr v of
+        True -> 
+            case getDataCon v of
+                Just con -> return $! GenStgConApp con [toArg a] (dcOrigArgTys con) 
+                Nothing -> fail $ "No datacon found for " ++ show v 
+        _    -> return $! GenStgApp v [toArg a]
 coreExprToStg (Lam v1 v2) = GenStgLam [v1] <$> coreExprToStg v2
 coreExprToStg (Let (NonRec v e) i) = do
     e' <- coreExprToStg e

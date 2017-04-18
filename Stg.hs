@@ -3,6 +3,7 @@ module Stg where
 import Prelude hiding ((<$>))
 import Core
 import Type
+import TyCon
 import DataCon
 import Pretty
 import Text.PrettyPrint.Leijen hiding (Pretty)
@@ -68,7 +69,7 @@ type StgAlt        = GenStgAlt Var Var
 instance Pretty StgExpr where
     ppr p t (GenStgApp e1 e2) = parens (ppr p t e1) <+> hsep (map (ppr p t) e2)
     ppr p t (GenStgLit l) = ppr p t l
-    ppr p t (GenStgConApp e1 e2 e3) = error ""
+    ppr p t (GenStgConApp con e2 e3) = text (dcName con) <+> hsep (map (ppr p t) e2)
     ppr p t (GenStgOpApp o [e1,e2] ty) = ppr p t e1 <+> ppr p t o <+> ppr p t e2
     ppr p t (GenStgLam e1 e2) = text "\\" <+> hsep (map (ppr p t) e1) <+> text "->" <+> ppr p t e2
     ppr p t (GenStgCase expr bndr typ alts) = 
@@ -96,3 +97,12 @@ instance Pretty a => Pretty [a] where
 instance Pretty StgAlt where
     ppr p t (con,binds,expr) = 
         ppr p t con <+> hsep (map (ppr p t) binds) <+> text "->" <+> ppr p t expr
+
+getDataCon :: Var -> Maybe DataCon
+getDataCon TyVar{varName=name,varType=TyConApp a@AlgTyCon{} _} = 
+    case algTcRhs a of
+        AbstractTyCon -> Nothing
+        DataTyCon {data_cons=cons} -> 
+            let list = map (\dc -> (dcName dc,dc)) cons
+            in lookup name list
+getDataCon _ = Nothing
