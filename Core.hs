@@ -1,11 +1,31 @@
-{-# Language DeriveDataTypeable, OverloadedStrings, FlexibleInstances, ScopedTypeVariables #-}
-module Core where
+{-# Language DeriveDataTypeable, OverloadedStrings, FlexibleInstances #-}
+{-# Language MagicHash, ScopedTypeVariables#-}
+module Core 
+    ( Expr(..)
+    , Literal(..)
+    , Binop(..)
+    , Arg(..)
+    , Function(..)
+    , Alt(..)
+    , AltCon(..)
+    , Bind(..)
+    , FreshMonad(..)
+    , descendM
+    , descend
+    , functionApply
+    -- From Type.hs
+    , Var(..)
+    , exprType 
+    , replaceAllVars
+    , mkVar
+    ) where
 import Type
 import Weight
 import DataCon
 import qualified Data.Text as T
 import Data.Data
 import Data.Functor.Identity
+import Data.List
 
 
 data Expr b 
@@ -23,18 +43,10 @@ data Literal
     = Int Int
     | Bool Bool
     deriving (Show,Eq,Ord,Data)
-data Binop = Add | Sub | Mul
+data Binop = Add | Sub | Mul | Add# | Sub# | Mul# 
     deriving (Eq, Ord, Show, Data)
 
-data Var 
-    = TyVar {
-        varName    :: !String,
-        realUnique :: !Int,
-        varType    :: Type,
-        varWeight  :: Weight
-    }
-    | Hole
-    deriving (Eq,Ord,Data,Show)
+
 {-instance Show Var where-}
     {-show v@TyVar{} = "(TyVar " ++ varName v ++ ")"-}
     {-show Hole = "_"-}
@@ -43,7 +55,7 @@ type Alt b = (AltCon, [b], Expr b)
 
 data AltCon
     = LitAlt Literal
-    {-| DataAlt DataCon-}
+    | DataAlt DataCon
     | Default
     deriving (Eq,Ord, Data, Show)
 
@@ -61,14 +73,7 @@ data Function = Function {
     }
     deriving (Show,Data)
 
-mkVar :: Type -> String -> Var
-mkVar t s = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
 
-iVar :: String -> Var
-iVar = mkVar $ TCon "Int"
-
-bVar :: String -> Var
-bVar = mkVar $ TCon "Bool"
 
 
 class Monad m => FreshMonad m where
@@ -79,7 +84,7 @@ class Monad m => FreshMonad m where
     freshName pre v@TyVar{} = do
         fr <- fresh
         let (old,_) = T.breakOnEnd "_" (T.pack $ varName v)
-            new = T.unpack old ++ "_" ++ pre ++ show fr
+            new = T.unpack (T.init old) ++ "_" ++ pre ++ show fr
         return $! v {varName=new, realUnique=fr}
 
 descendM :: (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> Expr b -> m (Expr b)
@@ -109,7 +114,7 @@ descend f ex = runIdentity (descendM (return . f) ex)
 
 descendA :: (Monad m, Applicative m) => (Expr b -> m (Expr b)) -> [Alt b] -> m [Alt b] 
 descendA f ((c,b,e):rest) = do
-    e' <- f e
+    e' <- descendM f e
     r' <- descendA f rest
     return $ (c,b,e'):r'
 descendA _ [] = return []
@@ -136,4 +141,15 @@ exprType (Lit (Int _)) = tInt
 exprType (Lit (Bool _)) = tBool
 exprType (Lam v e) = varType v `TArr` exprType e
 exprType x = error $ "No exprType defined for " ++ show x
+
+getFree :: Expr Var -> [Var]
+getFree (Var v) = [v]
+getFree (Lit _) = []
+getFree (App e1 e2) = getFree e1 `union` getFree e2
+getFree (Lam v e2) = (getFree e2) \\ [v]
+getFree (Let (NonRec v e) i) = getFree e `union` ((getFree i) \\ [v])
+getFree (Op o l r) = getFree l `union` getFree r
+getFree (Case scrut bnd t args) = getFree scrut `union` 
+    foldl' union [] (map (\(c,bnds,e) -> getFree e \\ bnds) args)
+getFree (Type t) = []
 
