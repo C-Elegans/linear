@@ -5,6 +5,7 @@ import Core
 import Core.Helper
 import DefaultTypes
 import Pretty
+import Data.List (foldl')
 import Debug.Trace (trace)
 import Control.Monad.State
 {-
@@ -30,17 +31,38 @@ renameM (Let (NonRec v@TyVar{} b) e) = do
     
 renameM (Let (Rec _) _) = return $ error "Recursive let not supported!"
 
-renameM (Case b v@TyVar{} t alts) = do
-    fr <- fresh
-    let v' = appendName v "_rn" fr
-    let alts' = rp v v' fr alts
-    return $! Case b v' t alts'
+renameM (Case b e t alts) = 
+    case e of
+        v@TyVar{} -> do
+            fr <- fresh
+            let v' = appendName v "_rn" fr
+            let alts' = rp v v' fr alts
+            alts'' <- mapM rn alts'
+            return $! Case b v' t alts''
+        _ -> do
+            alts'' <- mapM rn alts
+            return $! Case b Hole t alts''
     where
         rp :: Var -> Var -> Int -> [Alt Var] -> [Alt Var]
         rp v v' fr ((ac,b,e):rest) =
             let e' = descend (replaceAllNames (varName v) (varName v') fr) e
             in (ac,b,e'):(rp v v' fr rest)
         rp _ _ _ [] = []
+        rn :: Alt Var -> CompilerM (Alt Var)
+        rn a@(c,b,e) = do
+            b' <- mapM rv b
+            let bzipped = trace (show a) $ zip b b'
+            let e' = foldl' (\e (b,(b',fr)) -> 
+                                descend (replaceAllNames (varName b) (varName b') fr) e)
+                        e bzipped
+            return (c,map fst b',e')
+
+        rv :: Var -> CompilerM (Var,Int)
+        rv v = do
+            fr <- fresh
+            return $ (appendName v "_rn" fr,fr)
+                
+        
 renameM x = return x
 
 replaceAllNames :: String -> String -> Int -> Expr Var -> Expr Var
