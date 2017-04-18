@@ -1,10 +1,11 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Stg where
+import Prelude hiding ((<$>))
 import Core
 import Type
 import DataCon
 import Pretty
-import Text.PrettyPrint
+import Text.PrettyPrint.Leijen hiding (Pretty)
 
 data GenStgExpr bndr occ 
     = GenStgApp occ [GenStgArg occ]
@@ -71,22 +72,22 @@ instance Pretty StgExpr where
     ppr p t (GenStgOpApp o [e1,e2] ty) = ppr p t e1 <+> ppr p t o <+> ppr p t e2
     ppr p t (GenStgLam e1 e2) = text "\\" <+> hsep (map (ppr p t) e1) <+> text "->" <+> ppr p t e2
     ppr p t (GenStgCase expr bndr typ alts) = 
-        text "case" <+> ppr p t expr <+> text "of" <+> ppr p t bndr $$
+        text "case" <+> ppr p t expr <+> text "of" <+> ppr p t bndr <$>
             vcat (map (nest 4 . ppr p t) alts)
-    ppr p t (GenStgLet e1 e2) = text "let" <+> ppr p t e1 $$ "in" <+> ppr p t e2
+    ppr p t (GenStgLet e1 e2) = text "let" <+> ppr p t e1 <$> text "in" <+> ppr p t e2
 
 instance Pretty StgArg where
     ppr p t (StgVarArg a) = ppr p t a
     ppr p t (StgLitArg a) = ppr p t a 
 
 instance Pretty StgTopBinding where
-    ppr p t (StgTopLifted (StgNonRec b1 b2)) = ppr p t b1 <+> text "=" $$ nest 4 (ppr p t b2)
+    ppr p t (StgTopLifted (StgNonRec b1 b2)) = ppr p t b1 <+> text "=" <$> nest 4 (ppr p t b2)
 instance Pretty StgBinding where
     ppr p t (StgNonRec b1 b2) = ppr p t b1 <+> text "=" <+> ppr p t b2
 
 instance Pretty StgRhs where
-    ppr p t (StgRhsClosure r1 r2 r3 r4) = text "\\" <+> hsep (map (ppr p t) r3) <+>
-        brackets (ppr p t r2) <+> text "->" $$ nest 4 (ppr p t r4)
+    ppr p t (StgRhsClosure r1 r2 r3 r4) = text "\\" <> hsep (map (ppr p t) r3) <+>
+        brackets (ppr p t r2) <+> text "->" <$> indent 4 (ppr p t r4)
         
     ppr p t (StgRhsCon r1 r2) = error ""
 instance Pretty a => Pretty [a] where

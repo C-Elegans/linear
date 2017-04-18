@@ -7,6 +7,8 @@ import Type
 import Flags
 import Stg
 import Stg.CoreToStg
+import Stg.Compile
+import DataCon
 import Data.Maybe (mapMaybe)
 import System.Environment
 import qualified Data.Set as S
@@ -19,11 +21,17 @@ testExpr3  = Lam (iVar "b") $ Case (Op Add (Var (iVar "b")) (Lit (Int 1))) (iVar
     [(LitAlt (Int 1), [], Lit (Int 1)), (Default, [iVar "x"], Var (iVar "x"))]
 testExpr4  = Lam (iVar "a") $ App (Lam (iVar "b") (Op Add (Var (iVar "b")) (Lit (Int 1)))) (Var (iVar "a"))
 
+addExpr = Lam (iVar "a") $ Lam (iVar "b") $ Case (Var (iVar "a")) Hole tInt
+    [(DataAlt iBox,[iVar "a'"], Case (Var (iVar "b")) Hole tInt 
+        [(DataAlt iBox,[iVar "b'"], App (Var iBoxV) (Op Add# (Var (iVarU "a'")) (Var (iVarU "b'"))))])]
+
 func = Function {fName="test", fType= tInt `TArr` tInt `TArr` tInt `TArr` tInt, fBody=testExpr}
 func2 = Function {fName="test2", fType= tInt `TArr` tInt `TArr` tInt `TArr` tInt, fBody=testExpr2}
 func3 = Function {fName="testCase", fType = tInt `TArr` tInt, fBody=testExpr3} 
 func4 = Function {fName="testBeta", fType = tInt `TArr` tInt, fBody=testExpr4} 
-funcs = [func,func2,func3,func4]
+fadd = Function {fName="add", fType = tInt `TArr` tInt `TArr` tInt, fBody=addExpr} 
+{-funcs = [func,func2,func3,func4,fadd]-}
+funcs = [fadd]
 
 
 main :: IO ()
@@ -39,5 +47,7 @@ main = do
             (Right stg,_) <- runCompilerM (coreToStg funcs') (emptyCs)
             putStrLn $ banner "Stg"
             mapM_ (putStrLn . pp False) stg 
+            putStrLn $ banner "Compiled"
+            putStrLn $ render $ compile stg
         Left err -> putStrLn $ "Error: " ++  err
 

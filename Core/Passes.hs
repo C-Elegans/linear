@@ -24,10 +24,12 @@ passes fs =
 printPass :: Flag -> [Function] -> CompilerM [Function]
 printPass fl fs = do
     ifSet fl $ do
-        inIO $ putStrLn $ banner $ show fl
+        inIO $ putStrLn $ banner (show fl) 
         inIO $ mapM_ (putStrLn . pp False)  fs
     return fs
 
 ppIO :: Pretty p => p -> IO ()
-ppIO = putStrLn . pp False
+ppIO p = 
+    let s = pp False p
+    in putStrLn s
 bind = flip (.)

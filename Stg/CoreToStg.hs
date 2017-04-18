@@ -47,6 +47,7 @@ coreExprToStg x = return $ error $ "No coreExprToStg defined for " ++ show x
 toArg :: Expr Var -> StgArg
 toArg (Var v) = StgVarArg v
 toArg (Lit l) = StgLitArg l
+toArg x = error $ "Cannot convert expr: " ++ show x ++ "to StgArg (CoreToStg.hs:50)" 
 
 stgSimp :: StgRhs -> StgRhs
 stgSimp r@(StgRhsClosure info occ bndr (GenStgLam vs e)) = 
