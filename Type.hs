@@ -42,3 +42,6 @@ iVarU = mkVar $ TCon "Int#"
 
 mkVar :: Type -> String -> Var
 mkVar t s = TyVar { varName=s,realUnique=0,varType=t,varWeight=Omega}
+
+
+

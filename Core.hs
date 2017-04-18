@@ -22,6 +22,7 @@ module Core
 import Type
 import Weight
 import DataCon
+import TyCon
 import qualified Data.Text as T
 import Data.Data
 import Data.Functor.Identity
