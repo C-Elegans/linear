@@ -8,6 +8,7 @@ import Flags
 import Stg
 import Stg.CoreToStg
 import Stg.Compile
+import Cmm.Cmm
 import DataCon
 import DefaultTypes
 import Data.Maybe (mapMaybe)
